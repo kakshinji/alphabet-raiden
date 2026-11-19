@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>字母雷电 · 认识字母空战游戏</title>
+<style>
+  :root{
+    --neon:#4dd2ff; --neon2:#ff4d8d; --amber:#ffc247;
+    --ink:#e6f6ff; --muted:#8fb4d4;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;min-height:100%;}
+  body{
+    font-family:'Chalkboard SE','Marker Felt','PingFang SC','Microsoft YaHei',sans-serif;
+    background:radial-gradient(ellipse at 50% -15%,#1b3b6b 0%,#0a1834 48%,#050b19 100%);
+    color:var(--ink);display:flex;align-items:center;justify-content:center;
+    min-height:100vh;padding:14px;
+  }
+  #app{width:min(960px,100%);}
+  .screen{animation:fade .25s ease;}
+  .hidden{display:none!important;}
+  @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
+  .mono{font-family:'Courier New',ui-monospace,monospace;}
+
+  /* ---------- 面板 ---------- */
+  .panel{
+    background:linear-gradient(160deg,rgba(19,40,78,.96),rgba(7,15,36,.98));
+    border:2px solid rgba(77,210,255,.42);border-radius:26px;padding:26px 22px;text-align:center;
+    box-shadow:inset 0 0 60px rgba(77,210,255,.07),0 0 42px rgba(77,210,255,.12),0 22px 60px rgba(0,0,0,.55);
+  }
+  .logo{font-size:clamp(30px,5.4vw,50px);font-weight:900;line-height:1.18;margin:6px 0 4px;letter-spacing:2px;
+    background:linear-gradient(90deg,#68e6ff,#ffffff,#ff8ac0,#ffd166);
+    -webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 16px rgba(77,210,255,.5));}
+  .sub{color:var(--muted);font-size:clamp(12px,2.1vw,16px);margin:0 0 20px;letter-spacing:1px;}
+  .diffs{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin:6px 0 20px;}
+  .diff{
+    width:190px;min-height:140px;border-radius:18px;cursor:pointer;padding:16px 12px;
+    background:linear-gradient(180deg,rgba(32,62,108,.9),rgba(10,22,48,.92));
+    border:2px solid rgba(125,180,225,.35);color:var(--ink);
+    box-shadow:0 6px 18px rgba(0,0,0,.35),inset 0 0 20px rgba(77,210,255,.05);
+    transition:.16s;font-family:inherit;position:relative;overflow:hidden;
+  }
+  .diff::after{content:'';position:absolute;left:0;right:0;bottom:0;height:4px;background:var(--accent);box-shadow:0 0 14px var(--accent);}
+  .diff:hover{transform:translateY(-4px);border-color:var(--accent);box-shadow:0 10px 26px rgba(0,0,0,.45),0 0 22px color-mix(in srgb,var(--accent) 45%,transparent);}
+  .diff:active{transform:translateY(2px);}
+  .diff.easy{--accent:#45e6a0;} .diff.medium{--accent:#ffc247;} .diff.hard{--accent:#ff5d7a;}
+  .diff .emoji{font-size:32px;display:block;margin-bottom:4px;filter:drop-shadow(0 0 10px var(--accent));}
+  .diff .dn{font-size:20px;font-weight:900;display:block;letter-spacing:2px;}
+  .diff .dd{font-size:11.5px;color:var(--muted);line-height:1.7;display:block;margin-top:6px;}
+  .howto{background:rgba(8,20,44,.7);border:1px dashed rgba(77,210,255,.4);border-radius:16px;
+    padding:14px 18px;text-align:left;font-size:clamp(12px,2vw,14.5px);line-height:1.95;color:#bcd9f2;max-width:660px;margin:0 auto;}
+  .howto b{color:var(--neon);}
+  .small-btn{border:1px solid rgba(77,210,255,.5);border-radius:12px;padding:12px 24px;font-size:16px;font-weight:900;
+    cursor:pointer;color:#04101f;background:linear-gradient(180deg,#8ceaff,#3ab6ee);
+    box-shadow:0 5px 0 #1d6f9c,0 0 22px rgba(77,210,255,.35);transition:.12s;margin:16px 6px 0;font-family:inherit;letter-spacing:1px;}
+  .small-btn:active{transform:translateY(3px);box-shadow:0 2px 0 #1d6f9c;}
+  .small-btn.green{background:linear-gradient(180deg,#a8f5c8,#45d18d);box-shadow:0 5px 0 #1f8a58,0 0 22px rgba(69,209,141,.35);}
+  .small-btn.grey{background:linear-gradient(180deg,#c3d7ea,#88a6c2);box-shadow:0 5px 0 #5b748f;}
+
+  /* ---------- HUD ---------- */
+  #hud{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px;}
+  .pill{background:rgba(13,30,60,.82);border:1px solid rgba(77,210,255,.3);border-radius:10px;
+    padding:7px 14px;font-size:15px;font-weight:900;display:flex;align-items:center;gap:7px;
+    box-shadow:inset 0 0 14px rgba(77,210,255,.06);}
+  .pill .lab{color:var(--muted);font-size:11px;font-weight:700;letter-spacing:1px;}
+  #score{color:#ffd166;text-shadow:0 0 10px rgba(255,209,102,.7);}
+  #combo{color:#ff8ac0;text-shadow:0 0 10px rgba(255,138,192,.7);}
+  #level{color:#68e6ff;text-shadow:0 0 10px rgba(104,230,255,.7);}
+  #lives .heart{color:#ff5d7a;font-size:17px;text-shadow:0 0 10px rgba(255,93,122,.8);}
+  #lives .heart.lost{color:#3c5472;text-shadow:none;}
+  .spacer{flex:1;}
+  .icon-btn{border:1px solid rgba(77,210,255,.35);background:rgba(13,30,60,.85);border-radius:10px;
+    width:40px;height:38px;cursor:pointer;font-size:18px;color:#fff;transition:.12s;}
+  .icon-btn:hover{border-color:var(--neon);box-shadow:0 0 14px rgba(77,210,255,.3);}
+  .icon-btn:active{transform:scale(.92);}
+  .icon-btn.off{opacity:.4;}
+
+  /* ---------- 战场 ---------- */
+  #playfield{
+    position:relative;overflow:hidden;border-radius:18px;height:clamp(330px,56vh,540px);
+    background:linear-gradient(180deg,#061029 0%,#0b2044 42%,#123a63 100%);
+    border:2px solid rgba(77,210,255,.45);
+    box-shadow:0 0 30px rgba(77,210,255,.16),inset 0 0 70px rgba(0,0,0,.5);
+    isolation:isolate;
+  }
+  #playfield::after{content:'';position:absolute;inset:0;z-index:6;pointer-events:none;
+    box-shadow:inset 0 0 90px rgba(0,0,0,.72);border-radius:16px;}
+  .starfield{position:absolute;inset:0;z-index:0;overflow:hidden;}
+  .star{position:absolute;border-radius:50%;background:#dff6ff;
+    animation:starfall linear infinite,twinkle ease-in-out infinite alternate;}
+  @keyframes starfall{from{transform:translateY(-30px);}to{transform:translateY(620px);}}
+  @keyframes twinkle{from{opacity:.2;}to{opacity:.95;}}
+  .grid{position:absolute;left:-60%;width:220%;bottom:-22%;height:66%;z-index:0;opacity:.5;
+    background-image:linear-gradient(rgba(77,210,255,.3) 1px,transparent 1px),
+                     linear-gradient(90deg,rgba(77,210,255,.22) 1px,transparent 1px);
+    background-size:58px 36px;transform:perspective(270px) rotateX(66deg);transform-origin:center bottom;
+    animation:gridroll 1.7s linear infinite;}
+  @keyframes gridroll{from{background-position:0 0;}to{background-position:0 36px;}}
+  .horizon{position:absolute;left:0;right:0;bottom:14%;height:2px;z-index:1;
+    background:linear-gradient(90deg,transparent,var(--neon),transparent);
+    box-shadow:0 0 24px 5px rgba(77,210,255,.45);}
+  .scan{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:.3;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0,rgba(0,0,0,.35) 1px,transparent 2px,transparent 4px);}
+  #flash{position:absolute;inset:0;z-index:9;pointer-events:none;opacity:0;
+    background:radial-gradient(circle,rgba(255,70,90,.55),rgba(255,40,60,.18));}
+  #flash.on{animation:redflash .42s ease-out;}
+  @keyframes redflash{0%{opacity:1;}100%{opacity:0;}}
+  #playfield.shake{animation:quakeshake .38s ease;}
+  @keyframes quakeshake{0%,100%{transform:translate(0,0);}
+    18%{transform:translate(-6px,3px);}38%{transform:translate(5px,-4px);}
+    58%{transform:translate(-4px,2px);}78%{transform:translate(3px,-2px);}}
+
+  .enemy{position:absolute;left:0;top:0;width:70px;height:88px;pointer-events:none;will-change:transform;z-index:4;}
+  .plane-svg{width:100%;height:100%;
+    filter:drop-shadow(0 0 9px var(--glow)) drop-shadow(0 4px 4px rgba(0,0,0,.55));}
+  .plane-svg .thrust{animation:thrust .18s ease-in-out infinite alternate;transform-origin:45px 10px;}
+  @keyframes thrust{from{opacity:.45;transform:scaleY(.7);}to{opacity:1;transform:scaleY(1.25);}}
+  .letter-badge{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:38px;height:38px;border-radius:50%;background:#fff;color:#0a1b38;
+    display:flex;align-items:center;justify-content:center;font-size:23px;font-weight:900;
+    border:2px solid #fff;box-shadow:0 0 0 3px rgba(77,210,255,.6),0 0 20px rgba(77,210,255,.85);
+    animation:badgePulse 1.5s ease-in-out infinite;}
+  @keyframes badgePulse{0%,100%{box-shadow:0 0 0 3px rgba(77,210,255,.55),0 0 16px rgba(77,210,255,.7);}
+    50%{box-shadow:0 0 0 4px rgba(77,210,255,.85),0 0 26px rgba(77,210,255,1);}}
+  .enemy.locked::after{content:'';position:absolute;left:-9px;top:-9px;right:-9px;bottom:-9px;
+    border:2px dashed var(--neon2);border-radius:12px;box-shadow:0 0 16px var(--neon2);
+    animation:lockspin 1.1s linear infinite;pointer-events:none;}
+  @keyframes lockspin{0%{transform:rotate(0);}100%{transform:rotate(360deg);}}
+
+  .player{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:86px;height:106px;z-index:5;
+    filter:drop-shadow(0 0 12px rgba(104,230,255,.75)) drop-shadow(0 6px 8px rgba(0,0,0,.5));pointer-events:none;}
+  .player svg{width:100%;height:100%;}
+  .player .muzzle{fill:#2b6d99;transition:fill .08s;}
+  .player.firing .muzzle{fill:#fff;filter:drop-shadow(0 0 9px #7ff0ff);}
+  .reload{position:absolute;left:50%;bottom:-2px;transform:translateX(-50%);
+    width:58px;height:6px;border-radius:8px;background:rgba(255,255,255,.18);overflow:hidden;}
+  .reload i{display:block;height:100%;width:100%;transform-origin:left;
+    background:linear-gradient(90deg,#4dd2ff,#c8f7ff);box-shadow:0 0 10px #4dd2ff;}
+
+  .bullet{position:absolute;left:0;top:0;width:9px;height:30px;border-radius:8px;z-index:5;pointer-events:none;
+    background:linear-gradient(0deg,rgba(77,210,255,0) 0%,#4dd2ff 35%,#ffffff 100%);
+    box-shadow:0 0 14px 4px rgba(104,230,255,.9);will-change:transform;}
+
+  .boom{position:absolute;width:0;height:0;pointer-events:none;z-index:7;}
+  .boom i{position:absolute;width:10px;height:10px;border-radius:50%;left:-5px;top:-5px;
+    animation:burst .62s cubic-bezier(.2,.7,.3,1) forwards;}
+  @keyframes burst{from{transform:rotate(var(--a)) translateY(0) scale(1.3);opacity:1;}
+    to{transform:rotate(var(--a)) translateY(calc(var(--d) * -1px)) scale(.2);opacity:0;}}
+  .boom .core{position:absolute;width:22px;height:22px;margin:-11px 0 0 -11px;border-radius:50%;
+    background:#fff;box-shadow:0 0 34px 14px #ff9f1c,0 0 60px 22px rgba(255,70,30,.7);
+    animation:core .38s ease-out forwards;}
+  @keyframes core{from{transform:scale(.4);opacity:1;}to{transform:scale(2.8);opacity:0;}}
+  .ring{position:absolute;width:18px;height:18px;margin:-9px 0 0 -9px;border-radius:50%;
+    border:3px solid #ffd166;box-shadow:0 0 16px #ff9f1c;animation:ring .5s ease-out forwards;}
+  @keyframes ring{from{transform:scale(.3);opacity:1;}to{transform:scale(4);opacity:0;}}
+  .smoke{position:absolute;width:18px;height:18px;margin:-9px;border-radius:50%;
+    background:rgba(150,180,210,.5);filter:blur(4px);animation:smoke .8s ease-out forwards;}
+  @keyframes smoke{from{transform:translate(0,0) scale(.6);opacity:.8;}
+    to{transform:translate(var(--sx),var(--sy)) scale(2.4);opacity:0;}}
+  .float-text{position:absolute;z-index:8;transform:translate(-50%,-50%);font-size:21px;font-weight:900;
+    white-space:nowrap;pointer-events:none;text-shadow:0 0 8px #000,0 0 18px currentColor;
+    animation:floatup .92s ease-out forwards;}
+  @keyframes floatup{from{opacity:0;transform:translate(-50%,-20%) scale(.7);}
+    25%{opacity:1;transform:translate(-50%,-70%) scale(1.15);}
+    to{opacity:0;transform:translate(-50%,-200%) scale(1);}}
+
+  /* ---------- 字母控制台 ---------- */
+  #letterPad{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:12px 6px 2px;}
+  .letter-btn{width:clamp(40px,6.2vw,56px);height:clamp(40px,6.2vw,56px);border-radius:12px;
+    border:2px solid rgba(77,210,255,.5);background:linear-gradient(180deg,#1d3f6d,#0b1b39);
+    box-shadow:0 4px 0 #05102a,inset 0 0 14px rgba(77,210,255,.12);
+    font-family:'Courier New',monospace;font-size:clamp(19px,3vw,26px);font-weight:900;color:#eafaff;
+    text-shadow:0 0 10px rgba(77,210,255,.9);cursor:pointer;user-select:none;transition:.08s;}
+  .letter-btn:hover{border-color:#a9eeff;box-shadow:0 4px 0 #05102a,0 0 18px rgba(77,210,255,.45);}
+  .letter-btn:active,.letter-btn.press{transform:translateY(3px);box-shadow:0 1px 0 #05102a;}
+  .letter-btn.flash{animation:keyflash .3s ease;}
+  @keyframes keyflash{0%{background:#bff5ff;color:#04101f;box-shadow:0 0 26px #7fe9ff;transform:scale(1.1);}
+    100%{background:linear-gradient(180deg,#1d3f6d,#0b1b39);transform:scale(1);}}
+  .letter-btn.shake{animation:keyshake .3s ease;}
+  @keyframes keyshake{0%,100%{transform:translateX(0);}25%{transform:translateX(-6px);}75%{transform:translateX(6px);}}
+  .hint{text-align:center;color:#7fa5c6;font-size:12px;margin-top:9px;letter-spacing:.5px;}
+
+  .big-score{font-size:clamp(42px,8vw,68px);font-weight:900;color:#ffd166;line-height:1.1;margin:8px 0 2px;
+    text-shadow:0 0 24px rgba(255,209,102,.8);}
+  .stat-row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:16px 0 4px;}
+  .stat{background:rgba(13,30,60,.8);border:1px solid rgba(77,210,255,.25);border-radius:12px;
+    padding:10px 22px;font-size:12px;color:var(--muted);letter-spacing:1px;}
+  .stat b{display:block;font-family:'Courier New',monospace;font-size:26px;color:#eafaff;margin-top:3px;}
+  .medal{font-size:54px;filter:drop-shadow(0 0 18px rgba(255,209,102,.7));}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- 开始界面 -->
+  <div id="startScreen" class="screen panel">
+    <div style="font-size:40px">✈️ 🔤 💥</div>
+    <h1 class="logo">字 母 雷 电</h1>
+    <p class="sub">ALPHABET RAIDEN · 认字母空战</p>
+    <div class="diffs">
+      <button class="diff easy" data-diff="easy">
+        <span class="emoji">🌱</span><span class="dn">简单</span>
+        <span class="dd">字母 A–F · 慢慢飞 · 5 条生命<br>航线：直扑 / 缓弯</span>
+      </button>
+      <button class="diff medium" data-diff="medium">
+        <span class="emoji">🚀</span><span class="dn">中等</span>
+        <span class="dd">字母 A–M · 3 条生命<br>新增 S 弯 / 波浪 / 之字 / 大回环</span>
+      </button>
+      <button class="diff hard" data-diff="hard">
+        <span class="emoji">🏆</span><span class="dn">困难</span>
+        <span class="dd">字母 A–Z · 含小写 · 3 条生命<br>螺旋 / 绕圈 / 三机编队</span>
+      </button>
+    </div>
+    <div class="howto">
+      🎯 <b>任务：</b>敌机从屏幕顶部<b>各处随机出现</b>，目标都是你的飞机。看清机身上的字母，按相同字母按钮发射<b>追踪能量弹</b>击落它。<br>
+      🔒 发射后目标出现<b>锁定准星</b>，子弹一路追击。<br>
+      🌀 敌机沿<b>弯曲航线</b>扑来——直扑、S 弯、波浪、之字、大回环、螺旋、绕圈，越难越难预判。<br>
+      ✈️ 敌机有完整外形：机头、主机翼、尾翼和引擎尾焰。<br>
+      ❤️ 让敌机飞到你的飞机就会扣一条生命。<br>
+      ⌨️ 电脑上可直接按键盘字母键开火。
+    </div>
+  </div>
+
+  <!-- 游戏界面 -->
+  <div id="gameScreen" class="screen hidden">
+    <div id="hud">
+      <div class="pill"><span class="lab">SCORE</span><span id="score" class="mono">0</span></div>
+      <div class="pill"><span class="lab">LIFE</span><span id="lives"></span></div>
+      <div class="pill"><span class="lab">COMBO</span><span id="combo" class="mono">0</span></div>
+      <div class="pill"><span class="lab">LV</span><span id="level" class="mono">1</span></div>
+      <div class="spacer"></div>
+      <button id="soundBtn" class="icon-btn" title="开关声音">🔊</button>
+      <button id="restartBtn" class="icon-btn" title="重新开始">🔄</button>
+    </div>
+    <div id="playfield">
+      <div class="starfield" id="starfield"></div>
+      <div class="grid"></div>
+      <div class="horizon"></div>
+      <div class="scan"></div>
+      <div id="flash"></div>
+      <div id="player" class="player">
+        <svg viewBox="0 0 80 100">
+          <path d="M40 3 L50 26 L53 48 L69 65 L69 75 L52 69 L52 83 L61 91 L61 98 L40 91 L19 98 L19 91 L28 83 L28 69 L11 75 L11 65 L27 48 L30 26 Z"
+                fill="#5cc8ff" stroke="#d8f7ff" stroke-width="1.6"/>
+          <path d="M40 3 L50 26 L53 48 L40 44 L27 48 L30 26 Z" fill="#bceeff" opacity=".85"/>
+          <ellipse cx="40" cy="31" rx="8" ry="11" fill="#0d2b4c" stroke="#8fe6ff" stroke-width="2"/>
+          <ellipse cx="40" cy="29" rx="4" ry="6" fill="#4dd2ff"/>
+          <rect class="muzzle" x="24" y="52" width="5" height="12" rx="2"/>
+          <rect class="muzzle" x="51" y="52" width="5" height="12" rx="2"/>
+          <ellipse class="thrust" cx="40" cy="96" rx="6" ry="10" fill="#ffb03a" opacity=".9"/>
+        </svg>
+        <div class="reload"><i id="reloadBar"></i></div>
+      </div>
+    </div>
+    <div id="letterPad"></div>
+    <div class="hint">按字母按钮 / 键盘字母开火 · 敌机会摆动、俯冲、螺旋，瞄准最危险的那架！</div>
+  </div>
+
+  <!-- 结束界面 -->
+  <div id="overScreen" class="screen panel hidden">
+    <div class="medal">🏅</div>
+    <h1 class="logo" style="font-size:clamp(26px,4.4vw,38px)">MISSION OVER</h1>
+    <div class="big-score mono" id="finalScore">0</div>
+    <div style="color:var(--muted);letter-spacing:2px;font-size:12px">本次得分</div>
+    <div class="stat-row">
+      <div class="stat">最高连击<b id="finalCombo">0</b></div>
+      <div class="stat">历史最高<b id="finalHi">0</b></div>
+    </div>
+    <div>
+      <button id="againBtn" class="small-btn green">再战一次</button>
+      <button id="backBtn" class="small-btn grey">换个难度</button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  const $ = s => document.querySelector(s);
+  const startScreen=$('#startScreen'), gameScreen=$('#gameScreen'), overScreen=$('#overScreen');
+  const field=$('#playfield'), pad=$('#letterPad'), playerEl=$('#player');
+  const reloadBar=$('#reloadBar'), flashEl=$('#flash'), starfield=$('#starfield');
+  const scoreEl=$('#score'), livesEl=$('#lives'), comboEl=$('#combo'), levelEl=$('#level');
+  const soundBtn=$('#soundBtn');
+
+  const SHIPS={
+    scout:'<path d="M45 40 L84 68 L84 78 L45 66 L6 78 L6 68 Z" fill="COL" stroke="#ffffff" stroke-opacity=".4" stroke-width="1.4"/>'+
+          '<path d="M45 12 L64 28 L64 34 L45 26 L26 34 L26 28 Z" fill="COL" stroke="#ffffff" stroke-opacity=".35" stroke-width="1.2"/>'+
+          '<path d="M45 6 Q53 22 53 52 L52 88 Q45 105 45 108 Q45 105 38 88 L37 52 Q37 22 45 6 Z" fill="COL" stroke="#ffffff" stroke-opacity=".55" stroke-width="1.6"/>'+
+          '<path d="M45 50 L52 88 Q45 105 45 108 Q45 105 38 88 Z" fill="#ffffff" opacity=".18"/>'+
+          '<ellipse cx="45" cy="74" rx="7" ry="11" fill="#081729" stroke="#c9f4ff" stroke-width="2"/>'+
+          '<ellipse class="thrust" cx="45" cy="9" rx="5.5" ry="10" fill="#ffb03a"/>',
+    dart:'<path d="M45 34 L86 82 L60 74 L45 96 L30 74 L4 82 Z" fill="COL" stroke="#ffffff" stroke-opacity=".4" stroke-width="1.4"/>'+
+         '<path d="M45 10 L60 30 L45 25 L30 30 Z" fill="COL" stroke="#ffffff" stroke-opacity=".35" stroke-width="1.2"/>'+
+         '<path d="M45 4 Q51 20 51 50 L50 90 Q45 106 45 109 Q45 106 40 90 L39 50 Q39 20 45 4 Z" fill="COL" stroke="#ffffff" stroke-opacity=".55" stroke-width="1.6"/>'+
+         '<ellipse cx="45" cy="70" rx="6" ry="10" fill="#081729" stroke="#c9f4ff" stroke-width="2"/>'+
+         '<ellipse class="thrust" cx="45" cy="9" rx="4.5" ry="10" fill="#7ff0ff"/>',
+    heavy:'<path d="M45 38 L88 60 L88 76 L45 64 L2 76 L2 60 Z" fill="COL" stroke="#ffffff" stroke-opacity=".4" stroke-width="1.4"/>'+
+          '<path d="M45 8 L72 26 L72 34 L45 25 L18 34 L18 26 Z" fill="COL" stroke="#ffffff" stroke-opacity=".35" stroke-width="1.2"/>'+
+          '<path d="M45 5 Q55 20 55 52 L54 90 Q45 107 45 109 Q45 107 36 90 L35 52 Q35 20 45 5 Z" fill="COL" stroke="#ffffff" stroke-opacity=".55" stroke-width="1.6"/>'+
+          '<rect x="28" y="14" width="7" height="18" rx="3" fill="#081729" opacity=".65"/>'+
+          '<rect x="55" y="14" width="7" height="18" rx="3" fill="#081729" opacity=".65"/>'+
+          '<ellipse cx="45" cy="74" rx="8" ry="12" fill="#081729" stroke="#c9f4ff" stroke-width="2"/>'+
+          '<ellipse class="thrust" cx="32" cy="9" rx="4" ry="9" fill="#ff7a3a"/>'+
+          '<ellipse class="thrust" cx="58" cy="9" rx="4" ry="9" fill="#ff7a3a"/>'
+  };
+  const COLORS=['#ff4d6d','#ff8a3d','#b06bff','#35d6a0','#ff5fa8','#3fc9e8','#ffc247','#8f9cff'];
+  const DIFFS={
+    easy:{letters:'ABCDEF'.split(''),spawn:1750,speed:36,maxEnemies:3,lives:5,lower:0,
+          routes:['direct','direct','curve','curve'],formation:0},
+    medium:{letters:'ABCDEFGHIJKLM'.split(''),spawn:1250,speed:55,maxEnemies:4,lives:3,lower:0,
+          routes:['direct','curve','sine','zigzag','hook'],formation:0},
+    hard:{letters:'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split(''),spawn:920,speed:78,maxEnemies:5,lives:3,lower:.3,
+          routes:['curve','sine','zigzag','hook','spiral','loop','loop'],formation:.28}
+  };
+  let cfg,letters,curDiff='easy',running=false,raf=0,last=0;
+  let enemies=[],bullets=[],spawnAcc=0,cooldown=0;
+  let score=0,lives=3,combo=0,maxCombo=0,hits=0,level=1;
+  let soundOn=localStorage.getItem('plane_sound')!=='0';
+
+  /* ------- 音效 ------- */
+  let actx=null;
+  function audio(){
+    if(!actx){const AC=window.AudioContext||window.webkitAudioContext;if(AC)actx=new AC();}
+    if(actx&&actx.state==='suspended')actx.resume();
+  }
+  function tone(freq,dur,type,vol,end){
+    if(!soundOn||!actx)return;
+    const o=actx.createOscillator(),g=actx.createGain(),t=actx.currentTime;
+    o.type=type||'sine';o.frequency.setValueAtTime(freq,t);
+    if(end)o.frequency.exponentialRampToValueAtTime(end,t+dur);
+    g.gain.setValueAtTime(vol||.08,t);g.gain.exponentialRampToValueAtTime(.0001,t+dur);
+    o.connect(g);g.connect(actx.destination);o.start(t);o.stop(t+dur+.02);
+  }
+  function noise(dur,vol){
+    if(!soundOn||!actx)return;
+    const len=Math.floor(actx.sampleRate*dur),buf=actx.createBuffer(1,len,actx.sampleRate),d=buf.getChannelData(0);
+    for(let i=0;i<len;i++)d[i]=Math.random()*2-1;
+    const src=actx.createBufferSource();src.buffer=buf;
+    const f=actx.createBiquadFilter();f.type='lowpass';
+    f.frequency.setValueAtTime(1600,actx.currentTime);
+    f.frequency.exponentialRampToValueAtTime(140,actx.currentTime+dur);
+    const g=actx.createGain();g.gain.setValueAtTime(vol,actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(.0001,actx.currentTime+dur);
+    src.connect(f);f.connect(g);g.connect(actx.destination);src.start();
+  }
+  const sShoot=()=>{tone(1150,.09,'sawtooth',.035,420);tone(2300,.05,'sine',.018,900);};
+  const sHit=()=>{noise(.32,.16);tone(150,.28,'sawtooth',.09,48);setTimeout(()=>tone(1040,.1,'sine',.05),60);};
+  const sBoom=()=>{noise(.45,.2);tone(120,.38,'sawtooth',.1,40);};
+  const sMiss=()=>tone(180,.07,'square',.028);
+  function say(letter){
+    if(!soundOn||!('speechSynthesis' in window))return;
+    try{
+      const u=new SpeechSynthesisUtterance(letter);
+      u.lang='en-US';u.rate=.95;u.pitch=1.2;u.volume=.7;
+      speechSynthesis.cancel();speechSynthesis.speak(u);
+    }catch(e){}
+  }
+  function updateSoundBtn(){soundBtn.textContent=soundOn?'🔊':'🔇';soundBtn.classList.toggle('off',!soundOn);}
+  updateSoundBtn();
+
+  /* ------- 背景星星 ------- */
+  function buildStars(){
+    starfield.innerHTML='';
+    for(let i=0;i<46;i++){
+      const s=document.createElement('div');s.className='star';
+      const size=(Math.random()*2+1).toFixed(1);
+      s.style.width=size+'px';s.style.height=size+'px';
+      s.style.left=(Math.random()*100).toFixed(1)+'%';
+      s.style.top=(-Math.random()*620).toFixed(0)+'px';
+      s.style.animationDuration=(5+Math.random()*9).toFixed(1)+'s,'+(1.2+Math.random()*2).toFixed(1)+'s';
+      s.style.animationDelay=(-Math.random()*8).toFixed(1)+'s,'+(-Math.random()*2).toFixed(1)+'s';
+      starfield.appendChild(s);
+    }
+  }
+
+  /* ------- 界面与状态 ------- */
+  function buildPad(){
+    pad.innerHTML='';
+    letters.forEach(l=>{
+      const b=document.createElement('button');
+      b.className='letter-btn';b.dataset.letter=l;b.textContent=l;
+      b.setAttribute('aria-label','射击字母 '+l);pad.appendChild(b);
+    });
+  }
+  function updateHud(){
+    scoreEl.textContent=score;
+    comboEl.textContent=combo>1?('x'+combo):'0';
+    levelEl.textContent=level;
+    let h='';for(let i=0;i<cfg.lives;i++)h+='<span class="heart'+(i<lives?'':' lost')+'">♥</span>';
+    livesEl.innerHTML=h;
+  }
+  function clearField(){
+    enemies.forEach(e=>e.el.remove());enemies=[];
+    bullets.forEach(b=>b.el.remove());bullets=[];
+    field.querySelectorAll('.boom,.ring,.float-text,.smoke').forEach(n=>n.remove());
+  }
+  function startGame(diff){
+    curDiff=diff;cfg=DIFFS[diff];letters=cfg.letters.slice();
+    score=0;lives=cfg.lives;combo=0;maxCombo=0;hits=0;level=1;
+    spawnAcc=0;cooldown=0;reloadBar.style.transform='scaleX(1)';
+    field.classList.remove('shake');flashEl.classList.remove('on');
+    clearField();buildStars();buildPad();updateHud();
+    startScreen.classList.add('hidden');overScreen.classList.add('hidden');
+    gameScreen.classList.remove('hidden');
+    audio();running=true;last=performance.now();raf=requestAnimationFrame(loop);
+  }
+  function screenHit(){
+    field.classList.remove('shake');void field.offsetWidth;field.classList.add('shake');
+    flashEl.classList.remove('on');void flashEl.offsetWidth;flashEl.classList.add('on');
+  }
+  function gameOver(){
+    running=false;cancelAnimationFrame(raf);
+    const key='plane_hi_'+curDiff;
+    const hi=Math.max(score,parseInt(localStorage.getItem(key)||'0',10)||0);
+    try{localStorage.setItem(key,String(hi));}catch(e){}
+    $('#finalScore').textContent=score;$('#finalCombo').textContent=maxCombo;$('#finalHi').textContent=hi;
+    noise(.7,.2);[520,400,300,190].forEach((f,i)=>setTimeout(()=>tone(f,.26,'sine',.07),i*160));
+    gameScreen.classList.add('hidden');overScreen.classList.remove('hidden');
+  }
+
+  /* ------- 爆炸特效 ------- */
+  function boom(x,y,color,big){
+    const el=document.createElement('div');el.className='boom';
+    el.style.left=x+'px';el.style.top=y+'px';
+    const n=big?15:11;
+    for(let i=0;i<n;i++){
+      const p=document.createElement('i');
+      p.style.background=COLORS[i%COLORS.length];
+      p.style.setProperty('--a',(i*(360/n)+Math.floor(Math.random()*14))+'deg');
+      p.style.setProperty('--d',(big?45:30)+Math.floor(Math.random()*(big?40:30)));
+      el.appendChild(p);
+    }
+    for(let i=0;i<4;i++){
+      const s=document.createElement('div');s.className='smoke';
+      s.style.setProperty('--sx',((Math.random()-.5)*50).toFixed(0)+'px');
+      s.style.setProperty('--sy',((Math.random()-.5)*50+18).toFixed(0)+'px');
+      el.appendChild(s);
+    }
+    const core=document.createElement('div');core.className='core';el.appendChild(core);
+    const ring=document.createElement('div');ring.className='ring';el.appendChild(ring);
+    field.appendChild(el);setTimeout(()=>el.remove(),900);
+  }
+  function floatText(x,y,text,color){
+    const el=document.createElement('div');el.className='float-text';
+    el.style.left=x+'px';el.style.top=y+'px';el.style.color=color||'#ffd166';
+    el.textContent=text;field.appendChild(el);setTimeout(()=>el.remove(),940);
+  }
+
+  /* ------- 敌机与弯曲航线（终点始终是玩家飞机） ------- */
+  function createEnemy(startX,route,ship,letter,speedMult,w,h){
+    const color=COLORS[Math.floor(Math.random()*COLORS.length)];
+    const display=(cfg.lower&&Math.random()<cfg.lower)?letter.toLowerCase():letter;
+    const el=document.createElement('div');el.className='enemy';
+    el.style.setProperty('--glow',color);
+    el.innerHTML='<svg class="plane-svg" viewBox="0 0 90 110">'+SHIPS[ship].replace(/COL/g,color)+'</svg>'+
+                 '<div class="letter-badge">'+display+'</div>';
+    // 起点：顶部随机位置；终点：底部中央的玩家飞机
+    const side=startX<w/2?-1:1, tx=w/2, ty=h-150, midX=(startX+tx)/2;
+    const c={p0x:startX,p0y:-92,p3x:tx,p3y:ty,p1x:0,p1y:0,p2x:0,p2y:0};
+    switch(route){
+      case 'direct':
+        c.p1x=startX+(tx-startX)*.35;c.p1y=h*.16;
+        c.p2x=startX+(tx-startX)*.68;c.p2y=h*.58;break;
+      case 'curve':
+        c.p1x=startX+side*(95+Math.random()*70);c.p1y=h*.17;
+        c.p2x=tx-side*(85+Math.random()*60);c.p2y=h*.66;break;
+      case 'sine':
+        c.p1x=midX+side*70;c.p1y=h*.1;
+        c.p2x=midX-side*70;c.p2y=h*.75;break;
+      case 'zigzag':
+        c.p1x=startX-side*110;c.p1y=h*.26;
+        c.p2x=tx+side*110;c.p2y=h*.7;break;
+      case 'hook':
+        c.p1x=startX+side*175;c.p1y=h*.08;
+        c.p2x=tx+side*165;c.p2y=h*.62;break;
+      case 'spiral':
+        c.p1x=startX-side*130;c.p1y=h*.2;
+        c.p2x=tx+side*130;c.p2y=h*.62;break;
+      default: /* loop */
+        c.p1x=startX+side*150;c.p1y=h*.24;
+        c.p2x=tx-side*150;c.p2y=h*.55;break;
+    }
+    const spd=cfg.speed*speedMult*(.85+Math.random()*.3);
+    const e={
+      letter:letter,x:startX,y:-92,p:0,route:route,c:c,
+      speed:spd,duration:(h*1.28)/spd*(1+Math.random()*.18),
+      phase:Math.random()*Math.PI*2,amp:26+Math.random()*34,
+      el:el,color:color
+    };
+    el.style.transform='translate('+startX+'px,'+e.y+'px)';
+    field.appendChild(el);enemies.push(e);
+  }
+  function spawnWave(speedMult,w,h){
+    const route=cfg.routes[Math.floor(Math.random()*cfg.routes.length)];
+    const ship=(route==='hook'||route==='loop'||route==='spiral')?'heavy':
+               (route==='zigzag'||route==='sine'?'dart':'scout');
+    if(cfg.formation&&Math.random()<cfg.formation&&enemies.length+3<=cfg.maxEnemies+2){
+      const a=18+Math.random()*Math.max(10,w*.22);
+      const b=w/2+(Math.random()-.5)*70;
+      const d=w-18-Math.random()*Math.max(10,w*.22);
+      [a,b,d].forEach((x,i)=>createEnemy(x,i===1?'direct':'curve','dart',
+        letters[Math.floor(Math.random()*letters.length)],speedMult,w,h));
+      floatText(w/2,26,'三机编队来袭!','#ff8ac0');
+      return;
+    }
+    const x=12+Math.random()*Math.max(10,w-94);
+    createEnemy(x,route,ship,letters[Math.floor(Math.random()*letters.length)],speedMult,w,h);
+  }
+  function moveEnemy(e,dt){
+    e.p+=dt/e.duration*(e.route==='hook'?(.55+1.5*e.p*e.p):1);
+    if(e.p>1)e.p=1;
+    const p=e.p,u=1-p,c=e.c;
+    let x=u*u*u*c.p0x+3*u*u*p*c.p1x+3*u*p*p*c.p2x+p*p*p*c.p3x;
+    let y=u*u*u*c.p0y+3*u*u*p*c.p1y+3*u*p*p*c.p2y+p*p*p*c.p3y;
+    const fade=Math.sin(p*Math.PI);
+    if(e.route==='zigzag')x+=Math.sin(p*Math.PI*9+e.phase)*e.amp*fade;
+    else if(e.route==='sine')x+=Math.sin(p*Math.PI*6+e.phase)*e.amp*.8*fade;
+    else if(e.route==='spiral'||e.route==='loop'){
+      const turns=e.route==='loop'?13:11;
+      x+=Math.sin(p*Math.PI*turns+e.phase)*e.amp*1.7*(1-p);
+      y+=Math.cos(p*Math.PI*turns+e.phase)*e.amp*.55*(1-p);
+    }
+    e.x=x;e.y=y;
+    e.el.style.transform='translate('+x+'px,'+y+'px)';
+  }
+  function removeEnemy(e){
+    const i=enemies.indexOf(e);if(i>=0)enemies.splice(i,1);e.el.remove();
+  }
+
+  /* ------- 战斗逻辑 ------- */
+  function loseLife(e){
+    screenHit();boom(e.x+35,e.y+44,e.color,true);sBoom();
+    floatText(Math.max(60,Math.min(field.clientWidth-60,e.x+35)),e.y+20,'机体受损!','#ff5d7a');
+    combo=0;lives--;updateHud();removeEnemy(e);
+    if(lives<=0)gameOver();
+  }
+  function hitEnemy(e){
+    const x=e.x+35,y=e.y+44;
+    combo++;if(combo>maxCombo)maxCombo=combo;
+    const pts=10+(combo-1)*2;score+=pts;hits++;level=1+Math.floor(hits/8);
+    boom(x,y,e.color,combo>=5);sHit();say(e.letter);
+    floatText(x,y-8,'+'+pts+(combo>2?'  连击x'+combo:''),'#ffd166');
+    removeEnemy(e);updateHud();
+  }
+  function shoot(letter){
+    if(!running||cooldown>0)return;
+    const match=enemies.filter(e=>e.letter===letter&&!e.el.classList.contains('locked'));
+    if(!match.length){
+      sMiss();
+      const btn=pad.querySelector('[data-letter="'+letter+'"]');
+      if(btn){btn.classList.remove('shake');void btn.offsetWidth;btn.classList.add('shake');}
+      return;
+    }
+    match.sort((a,b)=>b.y-a.y);
+    const target=match[0];target.el.classList.add('locked');
+    const px=field.clientWidth/2,py=field.clientHeight-62;
+    const el=document.createElement('div');el.className='bullet';field.appendChild(el);
+    bullets.push({x:px-4.5,y:py,target:target,el:el});
+    cooldown=.24;sShoot();
+    playerEl.classList.remove('firing');void playerEl.offsetWidth;playerEl.classList.add('firing');
+    setTimeout(()=>playerEl.classList.remove('firing'),90);
+    const btn=pad.querySelector('[data-letter="'+letter+'"]');
+    if(btn){btn.classList.remove('flash');void btn.offsetWidth;btn.classList.add('flash');}
+  }
+
+  /* ------- 主循环 ------- */
+  function loop(t){
+    if(!running)return;
+    const dt=Math.min(.05,(t-last)/1000);last=t;
+    const w=field.clientWidth,h=field.clientHeight;
+    const speedMult=Math.min(1.8,1+(level-1)*.08);
+    const spawnGap=cfg.spawn*Math.max(.62,1-(level-1)*.055);
+
+    spawnAcc+=dt*1000;
+    if(spawnAcc>=spawnGap){
+      spawnAcc=0;
+      if(enemies.length<cfg.maxEnemies)spawnWave(speedMult,w,h);
+    }
+    for(let i=enemies.length-1;i>=0;i--){
+      const e=enemies[i];
+      moveEnemy(e,dt);
+      if(e.p>=1){loseLife(e);if(!running)return;}
+    }
+    for(let i=bullets.length-1;i>=0;i--){
+      const b=bullets[i],tg=b.target;
+      if(enemies.indexOf(tg)<0){b.el.remove();bullets.splice(i,1);continue;}
+      const tx=tg.x+35,ty=tg.y+44,dx=tx-b.x,dy=ty-b.y,dist=Math.hypot(dx,dy),step=1350*dt;
+      if(dist<=step+9){hitEnemy(tg);b.el.remove();bullets.splice(i,1);}
+      else{
+        b.x+=dx/dist*step;b.y+=dy/dist*step;
+        const ang=Math.atan2(dy,dx)*180/Math.PI+90;
+        b.el.style.transform='translate('+b.x+'px,'+b.y+'px) rotate('+ang.toFixed(1)+'deg)';
+      }
+    }
+    if(cooldown>0){
+      cooldown=Math.max(0,cooldown-dt);
+      reloadBar.style.transform='scaleX('+(1-cooldown/.24).toFixed(2)+')';
+    }else reloadBar.style.transform='scaleX(1)';
+    raf=requestAnimationFrame(loop);
+  }
+
+  /* ------- 事件 ------- */
+  startScreen.addEventListener('click',e=>{
+    const b=e.target.closest('.diff');if(b)startGame(b.dataset.diff);
+  });
+  pad.addEventListener('click',e=>{
+    const b=e.target.closest('.letter-btn');if(b)shoot(b.dataset.letter);
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.repeat||!running)return;
+    const k=e.key.toUpperCase();
+    if(/^[A-Z]$/.test(k)){e.preventDefault();shoot(k);}
+  });
+  soundBtn.addEventListener('click',()=>{
+    soundOn=!soundOn;try{localStorage.setItem('plane_sound',soundOn?'1':'0');}catch(e){}
+    updateSoundBtn();if(soundOn)audio();
+  });
+  $('#restartBtn').addEventListener('click',()=>startGame(curDiff));
+  $('#againBtn').addEventListener('click',()=>startGame(curDiff));
+  $('#backBtn').addEventListener('click',()=>{
+    overScreen.classList.add('hidden');startScreen.classList.remove('hidden');
+  });
+})();
+</script>
+</body>
+</html>
