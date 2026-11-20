@@ -134,6 +134,9 @@
     animation:badgePulse 1.5s ease-in-out infinite;}
   @keyframes badgePulse{0%,100%{box-shadow:0 0 0 3px rgba(77,210,255,.55),0 0 16px rgba(77,210,255,.7);}
     50%{box-shadow:0 0 0 4px rgba(77,210,255,.85),0 0 26px rgba(77,210,255,1);}}
+  /* 数学模式：算式徽章（自适应宽度、小字号） */
+  .letter-badge.math-badge{width:auto;min-width:46px;max-width:66px;height:34px;padding:0 5px;
+    border-radius:11px;font-size:clamp(15px,2.3vw,19px);letter-spacing:.5px;white-space:nowrap;}
   .enemy.locked::after{content:'';position:absolute;left:-9px;top:-9px;right:-9px;bottom:-9px;
     border:2px dashed var(--neon2);border-radius:12px;box-shadow:0 0 16px var(--neon2);
     animation:lockspin 1.1s linear infinite;pointer-events:none;}
@@ -251,25 +254,35 @@
         <span class="mt">👾 BOSS 对决</span>
         <span class="md">单台 BOSS 发射字母导弹，拦截导弹并击破它</span>
       </button>
+      <button class="mode" data-mode="math">
+        <span class="mt">🔢 数学心算</span>
+        <span class="md">敌机带算式飞来，算出答案按数字键击落它</span>
+      </button>
+      <button class="mode" data-mode="num">
+        <span class="mt">🧒 幼儿认数字</span>
+        <span class="md">敌机只显示一个数字，按相同数字击落它（不用计算）</span>
+      </button>
     </div>
     <div class="mode-divider">— 选择难度 —</div>
     <div class="diffs">
       <button class="diff easy" data-diff="easy">
         <span class="emoji">🌱</span><span class="dn">简单</span>
-        <span class="dd">字母 A–F · 慢慢飞 · 5 条生命<br>航线：直扑 / 缓弯</span>
+        <span class="dd diff-desc">字母 A–F · 慢慢飞 · 5 条生命<br>航线：直扑 / 缓弯</span>
       </button>
       <button class="diff medium" data-diff="medium">
         <span class="emoji">🚀</span><span class="dn">中等</span>
-        <span class="dd">字母 A–M · 3 条生命<br>新增 S 弯 / 波浪 / 之字 / 大回环</span>
+        <span class="dd diff-desc">字母 A–M · 3 条生命<br>新增 S 弯 / 波浪 / 之字 / 大回环</span>
       </button>
       <button class="diff hard" data-diff="hard">
         <span class="emoji">🏆</span><span class="dn">困难</span>
-        <span class="dd">字母 A–Z · 含小写 · 3 条生命<br>螺旋 / 绕圈 / 三机编队</span>
+        <span class="dd diff-desc">字母 A–Z · 含小写 · 3 条生命<br>螺旋 / 绕圈 / 三机编队</span>
       </button>
     </div>
     <div class="howto">
       🌠 <b>经典空战：</b>敌机从顶部各处随机出现，沿弯曲航线扑向你的飞机。看清字母，按相同按钮发射<b>追踪能量弹</b>击落它。<br>
       👾 <b>BOSS 对决：</b>只有一台 BOSS 飞机在前方规律移动，它会发射带字母的导弹，身上也会每隔几秒亮出一个字母。<b>按对应字母即可击落导弹</b>；按 BOSS 身上的字母可攻击 BOSS，把它的血打光就获胜。<b>如果字母同时出现在导弹和 BOSS 上，优先打导弹！</b><br>
+      🔢 <b>数学心算：</b>敌机身上带着一道<b>算式</b>（如 3+4、12-5、3×3）。算出答案，<b>按答案对应的数字按钮</b>发射追踪弹击落它。答案都在 0–9 之间。<br>
+      🧒 <b>幼儿认数字：</b>敌机身上只显示<b>一个数字</b>（0–9），<b>不用计算</b>，按相同的数字按钮就能击落它。适合刚开始认识数字的小朋友。<br>
       🔒 发射后目标出现<b>锁定准星</b>，子弹一路追击。<br>
       🛩️ 你的飞机沿<b>固定 8 字轨迹自动前后左右移动</b>，不用你操控；子弹从飞机上发射。<br>
       ❤️ 敌机 / 导弹碰到你的飞机就会扣一条生命。<br>
@@ -377,8 +390,59 @@
   let enemies=[],bullets=[],spawnAcc=0,cooldown=0;
   let score=0,lives=3,combo=0,maxCombo=0,hits=0,level=1;
   let soundOn=localStorage.getItem('plane_sound')!=='0';
-  // 模式：classic 经典空战 / boss BOSS 对决
+  // 模式：classic 经典空战 / boss BOSS 对决 / math 数学心算
   let mode='classic', boss=null, missiles=[], bossLetterTimer=0, missileFireTimer=0;
+  // 各模式难度说明（切换模式时更新开始页卡片）
+  const DIFF_DESC={
+    classic:{easy:'字母 A–F · 慢慢飞 · 5 条生命<br>航线：直扑 / 缓弯',
+             medium:'字母 A–M · 3 条生命<br>新增 S 弯 / 波浪 / 之字 / 大回环',
+             hard:'字母 A–Z · 含小写 · 3 条生命<br>螺旋 / 绕圈 / 三机编队'},
+    boss:{easy:'BOSS 血少 · 导弹慢 · 5 条生命',
+          medium:'BOSS 血中 · 导弹中速 · 3 条生命',
+          hard:'BOSS 血多 · 导弹快 · 3 条生命'},
+    math:{easy:'10 以内加法 · 慢慢飞 · 5 条生命<br>答案 0–9，按数字键作答',
+          medium:'20 以内加减法 · 3 条生命<br>答案 0–9，越算越快',
+          hard:'乘法口诀 + 两步混合 · 3 条生命<br>答案 0–9，含三机编队'},
+    num:{easy:'认数字 0–9 · 慢慢飞 · 5 条生命<br>不用计算，按相同数字',
+         medium:'认数字 0–9 · 3 条生命<br>越飞越快，看清再按',
+         hard:'认数字 0–9 · 3 条生命<br>含三机编队，手要快'}
+  };
+  const MODE_HINT={
+    classic:'你的飞机自动沿 8 字轨迹移动 · 按字母按钮 / 键盘字母开火 · 瞄准最危险的那架！',
+    boss:'按字母拦截 BOSS 的导弹 · 按 BOSS 身上的字母攻击它 · 字母相同优先打导弹！',
+    math:'算出敌机算式 · 按答案数字按钮 / 键盘数字作答 · 答案是 0–9！',
+    num:'看清敌机上的数字 · 按相同数字按钮 / 键盘数字 · 不用计算！'
+  };
+  const ri=(a,b)=>a+Math.floor(Math.random()*(b-a+1));
+  // 生成一道答案为 0–9 的算式，返回 {ans:'7', text:'3+4'}
+  function makeQuestion(diff){
+    let a,b,c,ans,text;
+    if(diff==='easy'){
+      // 10 以内加法：a+b<=9
+      a=ri(0,9); b=ri(0,9-a); ans=a+b; text=a+'+'+b;
+    }else if(diff==='medium'){
+      if(Math.random()<.55){
+        // 20 以内减法，结果 0-9：a 在 ans..18
+        ans=ri(0,9); b=ri(0,18-ans); a=ans+b; text=a+'-'+b;
+      }else{
+        // 10 以内加法
+        a=ri(0,9); b=ri(0,9-a); ans=a+b; text=a+'+'+b;
+      }
+    }else{
+      const t=Math.random();
+      if(t<.4){
+        // 乘法口诀，积<=9
+        a=ri(1,9); b=ri(1,Math.max(1,Math.floor(9/a))); ans=a*b; text=a+'×'+b;
+      }else if(t<.72){
+        // 两步：a+b-c，结果 0-9
+        a=ri(0,9); b=ri(0,9-a); c=ri(0,a+b); ans=a+b-c; text=a+'+'+b+'-'+c;
+      }else{
+        // 20 以内减法
+        ans=ri(0,9); b=ri(0,18-ans); a=ans+b; text=a+'-'+b;
+      }
+    }
+    return {ans:String(ans),text:text};
+  }
   const BOSS_CFG={
     easy:{hp:12,letterEvery:3.4,fireEvery:2.6,missileSpeed:120},
     medium:{hp:18,letterEvery:2.9,fireEvery:2.0,missileSpeed:155},
@@ -465,12 +529,22 @@
   /* ------- 界面与状态 ------- */
   function buildPad(){
     pad.innerHTML='';
-    letters.forEach(l=>{
+    const isDigitMode=(mode==='math'||mode==='num');
+    const pool=isDigitMode?'0123456789'.split(''):letters;
+    pool.forEach(l=>{
       const b=document.createElement('button');
-      b.className='letter-btn';b.dataset.letter=l;b.textContent=l;
-      b.setAttribute('aria-label','射击字母 '+l);pad.appendChild(b);
+      b.className='letter-btn'+(isDigitMode?' num-btn':'');b.dataset.letter=l;b.textContent=l;
+      b.setAttribute('aria-label',isDigitMode?('数字 '+l):('射击字母 '+l));pad.appendChild(b);
     });
   }
+  function updateModeCopy(){
+    // 切换模式时更新难度卡片说明
+    document.querySelectorAll('.diff').forEach(d=>{
+      const el=d.querySelector('.diff-desc');
+      if(el)el.innerHTML=DIFF_DESC[mode][d.dataset.diff];
+    });
+  }
+  updateModeCopy();
   function updateHud(){
     scoreEl.textContent=score;
     comboEl.textContent=combo>1?('x'+combo):'0';
@@ -495,9 +569,7 @@
     clearField();buildStars();buildPad();updateHud();
     $('#bossHud').classList.toggle('show',mode==='boss');
     $('#bossMiniHp').style.transform='scaleX(1)';
-    $('.hint').textContent = mode==='boss'
-      ? '按字母拦截 BOSS 的导弹 · 按 BOSS 身上的字母攻击它 · 字母相同优先打导弹！'
-      : '你的飞机自动沿 8 字轨迹移动 · 按字母按钮 / 键盘字母开火 · 瞄准最危险的那架！';
+    $('.hint').textContent = MODE_HINT[mode];
     startScreen.classList.add('hidden');overScreen.classList.add('hidden');
     gameScreen.classList.remove('hidden');
     if(mode==='boss')createBoss();
@@ -550,13 +622,13 @@
   }
 
   /* ------- 敌机与弯曲航线（终点始终是玩家飞机） ------- */
-  function createEnemy(startX,route,ship,letter,speedMult,w,h){
+  function createEnemy(startX,route,ship,letter,speedMult,w,h,showText){
     const color=COLORS[Math.floor(Math.random()*COLORS.length)];
-    const display=(cfg.lower&&Math.random()<cfg.lower)?letter.toLowerCase():letter;
+    const display=showText!=null?showText:((cfg.lower&&Math.random()<cfg.lower)?letter.toLowerCase():letter);
     const el=document.createElement('div');el.className='enemy';
     el.style.setProperty('--glow',color);
     el.innerHTML='<svg class="plane-svg" viewBox="0 0 90 110">'+SHIPS[ship].replace(/COL/g,color)+'</svg>'+
-                 '<div class="letter-badge">'+display+'</div>';
+                 '<div class="letter-badge'+(mode==='math'?' math-badge':'')+'">'+display+'</div>';
     // 起点：顶部随机位置；终点：当前玩家飞机位置（循环中持续跟随）
     const side=startX<(playerX||w/2)?-1:1, tx=playerX||w/2, ty=playerY||h-150, midX=(startX+tx)/2;
     const c={p0x:startX,p0y:-92,p3x:tx,p3y:ty,p1x:0,p1y:0,p2x:0,p2y:0};
@@ -597,17 +669,25 @@
     const route=cfg.routes[Math.floor(Math.random()*cfg.routes.length)];
     const ship=(route==='hook'||route==='loop'||route==='spiral')?'heavy':
                (route==='zigzag'||route==='sine'?'dart':'scout');
+    const pick=()=>{
+      if(mode==='math')return makeQuestion(curDiff);
+      if(mode==='num')return {ans:String(ri(0,9)),text:null};
+      return {ans:letters[Math.floor(Math.random()*letters.length)],text:null};
+    };
     if(cfg.formation&&Math.random()<cfg.formation&&enemies.length+3<=cfg.maxEnemies+2){
       const a=18+Math.random()*Math.max(10,w*.22);
       const b=w/2+(Math.random()-.5)*70;
       const d=w-18-Math.random()*Math.max(10,w*.22);
-      [a,b,d].forEach((x,i)=>createEnemy(x,i===1?'direct':'curve','dart',
-        letters[Math.floor(Math.random()*letters.length)],speedMult,w,h));
+      [a,b,d].forEach((x,i)=>{
+        const q=pick();
+        createEnemy(x,i===1?'direct':'curve','dart',q.ans,speedMult,w,h,q.text);
+      });
       floatText(w/2,26,'三机编队来袭!','#ff8ac0');
       return;
     }
     const x=12+Math.random()*Math.max(10,w-94);
-    createEnemy(x,route,ship,letters[Math.floor(Math.random()*letters.length)],speedMult,w,h);
+    const q=pick();
+    createEnemy(x,route,ship,q.ans,speedMult,w,h,q.text);
   }
   function moveEnemy(e,dt){
     e.p+=dt/e.duration*(e.route==='hook'?(.55+1.5*e.p*e.p):1);
@@ -785,8 +865,8 @@
 
     updatePlayer(dt,w,h);
 
-    if(mode==='classic'){
-      // 敌机终点实时跟随玩家飞机，无论玩家怎么移动都朝它扑来
+    if(mode!=='boss'){
+      // 经典 / 数学 / 幼儿模式：敌机终点实时跟随玩家飞机，无论玩家怎么移动都朝它扑来
       for(let i=0;i<enemies.length;i++){enemies[i].c.p3x=playerX;enemies[i].c.p3y=playerY-8;}
       spawnAcc+=dt*1000;
       if(spawnAcc>=spawnGap){
@@ -852,6 +932,7 @@
       mode=m.dataset.mode;
       startScreen.querySelectorAll('.mode').forEach(x=>x.classList.toggle('active',x===m));
       $('#bossHud').classList.toggle('show',mode==='boss');
+      updateModeCopy();
       return;
     }
     const b=e.target.closest('.diff');if(b)startGame(b.dataset.diff);
@@ -861,6 +942,10 @@
   });
   document.addEventListener('keydown',e=>{
     if(e.repeat||!running)return;
+    if(mode==='math'||mode==='num'){
+      if(/^[0-9]$/.test(e.key)){e.preventDefault();shoot(e.key);}
+      return;
+    }
     const k=e.key.toUpperCase();
     if(/^[A-Z]$/.test(k)){e.preventDefault();shoot(k);}
   });
