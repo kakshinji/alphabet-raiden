@@ -10,14 +10,15 @@
     --ink:#e6f6ff; --muted:#8fb4d4;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;min-height:100%;}
+  html,body{margin:0;height:100%;overflow:hidden;}
   body{
     font-family:'Chalkboard SE','Marker Felt','PingFang SC','Microsoft YaHei',sans-serif;
-    background:radial-gradient(ellipse at 50% -15%,#1b3b6b 0%,#0a1834 48%,#050b19 100%);
-    color:var(--ink);display:flex;align-items:center;justify-content:center;
-    min-height:100vh;padding:14px;
+    background:#050b19;color:var(--ink);height:100%;
   }
-  #app{width:min(960px,100%);}
+  #app{width:100%;height:100%;position:relative;}
+  #startScreen,#overScreen{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;overflow:auto;}
+  #startScreen .panel,#overScreen .panel{width:min(960px,100%);}
+  #gameScreen{height:100%;display:flex;flex-direction:column;}
   .screen{animation:fade .25s ease;}
   .hidden{display:none!important;}
   @keyframes fade{from{opacity:0;transform:translateY(8px);}to{opacity:1;transform:none;}}
@@ -33,7 +34,21 @@
     background:linear-gradient(90deg,#68e6ff,#ffffff,#ff8ac0,#ffd166);
     -webkit-background-clip:text;background-clip:text;color:transparent;
     filter:drop-shadow(0 0 16px rgba(77,210,255,.5));}
-  .sub{color:var(--muted);font-size:clamp(12px,2.1vw,16px);margin:0 0 20px;letter-spacing:1px;}
+  .sub{color:var(--muted);font-size:clamp(12px,2.1vw,16px);margin:0 0 14px;letter-spacing:1px;}
+  /* 模式选择 */
+  .modes{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:4px 0 16px;}
+  .mode{
+    width:230px;padding:12px 14px;border-radius:16px;cursor:pointer;text-align:left;
+    background:linear-gradient(180deg,rgba(26,52,94,.9),rgba(9,20,44,.92));
+    border:2px solid rgba(125,180,225,.3);color:var(--ink);font-family:inherit;transition:.16s;
+  }
+  .mode .mt{font-size:17px;font-weight:900;letter-spacing:1px;display:block;margin-bottom:3px;}
+  .mode .md{font-size:11px;color:var(--muted);line-height:1.6;display:block;}
+  .mode:hover{transform:translateY(-3px);border-color:var(--neon);}
+  .mode.active{border-color:#45e6a0;box-shadow:0 0 22px rgba(69,230,160,.4),inset 0 0 20px rgba(69,230,160,.1);
+    background:linear-gradient(180deg,rgba(24,74,72,.92),rgba(9,32,40,.94));}
+  .mode.active .mt{color:#8bffc9;}
+  .mode-divider{color:#5b7fa3;font-size:11px;letter-spacing:2px;margin:2px 0 8px;}
   .diffs{display:flex;flex-wrap:wrap;gap:14px;justify-content:center;margin:6px 0 20px;}
   .diff{
     width:190px;min-height:140px;border-radius:18px;cursor:pointer;padding:16px 12px;
@@ -60,7 +75,7 @@
   .small-btn.grey{background:linear-gradient(180deg,#c3d7ea,#88a6c2);box-shadow:0 5px 0 #5b748f;}
 
   /* ---------- HUD ---------- */
-  #hud{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px;}
+  #hud{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:8px 12px 0;flex:0 0 auto;z-index:10;}
   .pill{background:rgba(13,30,60,.82);border:1px solid rgba(77,210,255,.3);border-radius:10px;
     padding:7px 14px;font-size:15px;font-weight:900;display:flex;align-items:center;gap:7px;
     box-shadow:inset 0 0 14px rgba(77,210,255,.06);}
@@ -79,30 +94,25 @@
 
   /* ---------- 战场 ---------- */
   #playfield{
-    position:relative;overflow:hidden;border-radius:18px;height:clamp(330px,56vh,540px);
+    position:relative;overflow:hidden;flex:1 1 auto;min-height:0;
     background:linear-gradient(180deg,#061029 0%,#0b2044 42%,#123a63 100%);
-    border:2px solid rgba(77,210,255,.45);
-    box-shadow:0 0 30px rgba(77,210,255,.16),inset 0 0 70px rgba(0,0,0,.5);
     isolation:isolate;
   }
   #playfield::after{content:'';position:absolute;inset:0;z-index:6;pointer-events:none;
-    box-shadow:inset 0 0 90px rgba(0,0,0,.72);border-radius:16px;}
-  .starfield{position:absolute;inset:0;z-index:0;overflow:hidden;}
-  .star{position:absolute;border-radius:50%;background:#dff6ff;
-    animation:starfall linear infinite,twinkle ease-in-out infinite alternate;}
-  @keyframes starfall{from{transform:translateY(-30px);}to{transform:translateY(620px);}}
-  @keyframes twinkle{from{opacity:.2;}to{opacity:.95;}}
-  .grid{position:absolute;left:-60%;width:220%;bottom:-22%;height:66%;z-index:0;opacity:.5;
-    background-image:linear-gradient(rgba(77,210,255,.3) 1px,transparent 1px),
-                     linear-gradient(90deg,rgba(77,210,255,.22) 1px,transparent 1px);
-    background-size:58px 36px;transform:perspective(270px) rotateX(66deg);transform-origin:center bottom;
-    animation:gridroll 1.7s linear infinite;}
-  @keyframes gridroll{from{background-position:0 0;}to{background-position:0 36px;}}
-  .horizon{position:absolute;left:0;right:0;bottom:14%;height:2px;z-index:1;
-    background:linear-gradient(90deg,transparent,var(--neon),transparent);
-    box-shadow:0 0 24px 5px rgba(77,210,255,.45);}
-  .scan{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:.3;
-    background:repeating-linear-gradient(0deg,rgba(0,0,0,.35) 0,rgba(0,0,0,.35) 1px,transparent 2px,transparent 4px);}
+    box-shadow:inset 0 0 90px rgba(0,0,0,.72);}
+  .starfield{display:none;}
+  .earthfield{position:absolute;inset:0;z-index:0;overflow:hidden;background:#0b1b2a;}
+  .earth-scroll{position:absolute;left:0;top:0;width:100%;height:200%;
+    animation:earthscroll 26s linear infinite;}
+  .earth-layer{position:absolute;left:0;width:100%;height:50%;
+    background:url('earth-bg.jpg') center top/cover no-repeat;}
+  .earth-layer:nth-child(1){top:0;}
+  .earth-layer:nth-child(2){top:50%;}
+  @keyframes earthscroll{from{transform:translateY(0);}to{transform:translateY(-50%);}}
+  .earth-vignette{position:absolute;inset:0;z-index:1;pointer-events:none;
+    background:linear-gradient(180deg,rgba(4,12,26,.5),rgba(4,12,26,.12) 30%,rgba(4,12,26,.12) 70%,rgba(4,12,26,.55));}
+  .scan{position:absolute;inset:0;z-index:5;pointer-events:none;opacity:.12;
+    background:repeating-linear-gradient(0deg,rgba(0,0,0,.3) 0,rgba(0,0,0,.3) 1px,transparent 2px,transparent 4px);}
   #flash{position:absolute;inset:0;z-index:9;pointer-events:none;opacity:0;
     background:radial-gradient(circle,rgba(255,70,90,.55),rgba(255,40,60,.18));}
   #flash.on{animation:redflash .42s ease-out;}
@@ -129,7 +139,39 @@
     animation:lockspin 1.1s linear infinite;pointer-events:none;}
   @keyframes lockspin{0%{transform:rotate(0);}100%{transform:rotate(360deg);}}
 
-  .player{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);width:86px;height:106px;z-index:5;
+  /* ------- BOSS 模式 ------- */
+  .boss{position:absolute;left:0;top:0;width:150px;height:176px;pointer-events:none;will-change:transform;z-index:4;
+    filter:drop-shadow(0 0 18px rgba(255,90,120,.75)) drop-shadow(0 8px 10px rgba(0,0,0,.6));}
+  .boss svg{width:100%;height:100%;}
+  .boss .thrust{animation:thrust .16s ease-in-out infinite alternate;transform-origin:75px 12px;}
+  .boss .letter-badge{position:absolute;left:50%;top:54%;width:52px;height:52px;font-size:30px;
+    background:#fff;color:#0a1b38;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-weight:900;border:3px solid #fff;box-shadow:0 0 0 4px rgba(255,77,141,.7),0 0 26px rgba(255,77,141,.95);
+    transform:translate(-50%,-50%);animation:badgePulse 1.2s ease-in-out infinite;}
+  .boss.letter-off .letter-badge{opacity:0;transform:translate(-50%,-50%) scale(.4);}
+  .boss.locked::after{content:'';position:absolute;inset:-10px;border:3px dashed var(--neon2);border-radius:16px;
+    box-shadow:0 0 20px var(--neon2);animation:lockspin 1.1s linear infinite;pointer-events:none;}
+  .boss-hp-wrap{position:absolute;left:50%;top:-4px;transform:translateX(-50%);width:150px;height:9px;
+    border-radius:6px;background:rgba(0,0,0,.55);border:1px solid rgba(255,120,150,.6);overflow:hidden;}
+  .boss-hp-wrap i{display:block;height:100%;width:100%;transform-origin:left;
+    background:linear-gradient(90deg,#ff4d6d,#ffc247);box-shadow:0 0 12px #ff4d6d;transition:transform .2s;}
+  .missile{position:absolute;left:0;top:0;width:40px;height:44px;pointer-events:none;will-change:transform;z-index:4;
+    filter:drop-shadow(0 0 10px rgba(255,140,60,.9));}
+  .missile svg{width:100%;height:100%;}
+  .missile .let{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);
+    width:26px;height:26px;border-radius:50%;background:#fff;color:#a10b2c;font-size:16px;font-weight:900;
+    display:flex;align-items:center;justify-content:center;border:2px solid #fff;
+    box-shadow:0 0 0 2px rgba(255,140,60,.8),0 0 14px rgba(255,140,60,1);}
+  .missile.locked::after{content:'';position:absolute;inset:-6px;border:2px dashed #fff;border-radius:50%;
+    box-shadow:0 0 14px #fff;animation:lockspin 1s linear infinite;pointer-events:none;}
+  .boss-hud{display:none;}
+  .boss-hud.show{display:flex;}
+  .boss-mini-hp{width:90px;height:9px;border-radius:6px;background:rgba(0,0,0,.5);
+    border:1px solid rgba(255,120,150,.6);overflow:hidden;display:inline-block;}
+  .boss-mini-hp i{display:block;height:100%;width:100%;transform-origin:left;
+    background:linear-gradient(90deg,#ff4d6d,#ffc247);box-shadow:0 0 10px #ff4d6d;transition:transform .2s;}
+
+  .player{position:absolute;left:0;top:0;width:86px;height:106px;z-index:5;will-change:transform;
     filter:drop-shadow(0 0 12px rgba(104,230,255,.75)) drop-shadow(0 6px 8px rgba(0,0,0,.5));pointer-events:none;}
   .player svg{width:100%;height:100%;}
   .player .muzzle{fill:#2b6d99;transition:fill .08s;}
@@ -167,7 +209,8 @@
     to{opacity:0;transform:translate(-50%,-200%) scale(1);}}
 
   /* ---------- 字母控制台 ---------- */
-  #letterPad{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:12px 6px 2px;}
+  #letterPad{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;padding:10px 8px 4px;
+    flex:0 0 auto;z-index:10;background:linear-gradient(180deg,rgba(5,13,28,0),rgba(5,13,28,.9) 40%);}
   .letter-btn{width:clamp(40px,6.2vw,56px);height:clamp(40px,6.2vw,56px);border-radius:12px;
     border:2px solid rgba(77,210,255,.5);background:linear-gradient(180deg,#1d3f6d,#0b1b39);
     box-shadow:0 4px 0 #05102a,inset 0 0 14px rgba(77,210,255,.12);
@@ -198,7 +241,18 @@
   <div id="startScreen" class="screen panel">
     <div style="font-size:40px">✈️ 🔤 💥</div>
     <h1 class="logo">字 母 雷 电</h1>
-    <p class="sub">ALPHABET RAIDEN · 认字母空战</p>
+    <p class="sub">ALPHABET RAIDEN · 山川湖泊上空认字母空战</p>
+    <div class="modes">
+      <button class="mode active" data-mode="classic">
+        <span class="mt">🌠 经典空战</span>
+        <span class="md">一群敌机从天而降，按字母按钮击落它们</span>
+      </button>
+      <button class="mode" data-mode="boss">
+        <span class="mt">👾 BOSS 对决</span>
+        <span class="md">单台 BOSS 发射字母导弹，拦截导弹并击破它</span>
+      </button>
+    </div>
+    <div class="mode-divider">— 选择难度 —</div>
     <div class="diffs">
       <button class="diff easy" data-diff="easy">
         <span class="emoji">🌱</span><span class="dn">简单</span>
@@ -214,11 +268,11 @@
       </button>
     </div>
     <div class="howto">
-      🎯 <b>任务：</b>敌机从屏幕顶部<b>各处随机出现</b>，目标都是你的飞机。看清机身上的字母，按相同字母按钮发射<b>追踪能量弹</b>击落它。<br>
+      🌠 <b>经典空战：</b>敌机从顶部各处随机出现，沿弯曲航线扑向你的飞机。看清字母，按相同按钮发射<b>追踪能量弹</b>击落它。<br>
+      👾 <b>BOSS 对决：</b>只有一台 BOSS 飞机在前方规律移动，它会发射带字母的导弹，身上也会每隔几秒亮出一个字母。<b>按对应字母即可击落导弹</b>；按 BOSS 身上的字母可攻击 BOSS，把它的血打光就获胜。<b>如果字母同时出现在导弹和 BOSS 上，优先打导弹！</b><br>
       🔒 发射后目标出现<b>锁定准星</b>，子弹一路追击。<br>
-      🌀 敌机沿<b>弯曲航线</b>扑来——直扑、S 弯、波浪、之字、大回环、螺旋、绕圈，越难越难预判。<br>
-      ✈️ 敌机有完整外形：机头、主机翼、尾翼和引擎尾焰。<br>
-      ❤️ 让敌机飞到你的飞机就会扣一条生命。<br>
+      🛩️ 你的飞机沿<b>固定 8 字轨迹自动前后左右移动</b>，不用你操控；子弹从飞机上发射。<br>
+      ❤️ 敌机 / 导弹碰到你的飞机就会扣一条生命。<br>
       ⌨️ 电脑上可直接按键盘字母键开火。
     </div>
   </div>
@@ -230,14 +284,18 @@
       <div class="pill"><span class="lab">LIFE</span><span id="lives"></span></div>
       <div class="pill"><span class="lab">COMBO</span><span id="combo" class="mono">0</span></div>
       <div class="pill"><span class="lab">LV</span><span id="level" class="mono">1</span></div>
+      <div class="pill boss-hud" id="bossHud"><span class="lab">BOSS</span><span class="boss-mini-hp"><i id="bossMiniHp"></i></span></div>
       <div class="spacer"></div>
       <button id="soundBtn" class="icon-btn" title="开关声音">🔊</button>
+      <button id="fullBtn" class="icon-btn" title="全屏切换">⛶</button>
       <button id="restartBtn" class="icon-btn" title="重新开始">🔄</button>
     </div>
     <div id="playfield">
+      <div class="earthfield">
+        <div class="earth-scroll"><div class="earth-layer"></div><div class="earth-layer"></div></div>
+        <div class="earth-vignette"></div>
+      </div>
       <div class="starfield" id="starfield"></div>
-      <div class="grid"></div>
-      <div class="horizon"></div>
       <div class="scan"></div>
       <div id="flash"></div>
       <div id="player" class="player">
@@ -255,13 +313,13 @@
       </div>
     </div>
     <div id="letterPad"></div>
-    <div class="hint">按字母按钮 / 键盘字母开火 · 敌机会摆动、俯冲、螺旋，瞄准最危险的那架！</div>
+    <div class="hint">你的飞机自动沿 8 字轨迹移动 · 按字母按钮 / 键盘字母开火 · 敌机摆动、俯冲、螺旋，瞄准最危险的那架！</div>
   </div>
 
   <!-- 结束界面 -->
   <div id="overScreen" class="screen panel hidden">
-    <div class="medal">🏅</div>
-    <h1 class="logo" style="font-size:clamp(26px,4.4vw,38px)">MISSION OVER</h1>
+    <div class="medal" id="finalMedal">🏅</div>
+    <h1 class="logo" id="finalTitle" style="font-size:clamp(26px,4.4vw,38px)">MISSION OVER</h1>
     <div class="big-score mono" id="finalScore">0</div>
     <div style="color:var(--muted);letter-spacing:2px;font-size:12px">本次得分</div>
     <div class="stat-row">
@@ -319,6 +377,23 @@
   let enemies=[],bullets=[],spawnAcc=0,cooldown=0;
   let score=0,lives=3,combo=0,maxCombo=0,hits=0,level=1;
   let soundOn=localStorage.getItem('plane_sound')!=='0';
+  // 模式：classic 经典空战 / boss BOSS 对决
+  let mode='classic', boss=null, missiles=[], bossLetterTimer=0, missileFireTimer=0;
+  const BOSS_CFG={
+    easy:{hp:12,letterEvery:3.4,fireEvery:2.6,missileSpeed:120},
+    medium:{hp:18,letterEvery:2.9,fireEvery:2.0,missileSpeed:155},
+    hard:{hp:26,letterEvery:2.3,fireEvery:1.5,missileSpeed:195}
+  };
+  let bossCfg;
+  // 玩家飞机规律移动状态：李萨如轨迹（左右 + 前后）
+  let playerT=0, playerX=0, playerY=0;
+  function updatePlayer(dt,w,h){
+    playerT+=dt;
+    // 横向缓慢摆动，纵向做幅度较小的前后往复，频率不同形成平滑 8 字轨迹
+    playerX=w/2+Math.sin(playerT*.62)*Math.min(w*.30,250);
+    playerY=h-118+Math.sin(playerT*1.18+Math.PI/2)*Math.min(h*.09,46);
+    playerEl.style.transform='translate('+(playerX-43)+'px,'+(playerY-53)+'px)';
+  }
 
   /* ------- 音效 ------- */
   let actx=null;
@@ -395,31 +470,45 @@
   function clearField(){
     enemies.forEach(e=>e.el.remove());enemies=[];
     bullets.forEach(b=>b.el.remove());bullets=[];
+    missiles.forEach(m=>m.el.remove());missiles=[];
+    if(boss&&boss.el)boss.el.remove();boss=null;
     field.querySelectorAll('.boom,.ring,.float-text,.smoke').forEach(n=>n.remove());
   }
   function startGame(diff){
     curDiff=diff;cfg=DIFFS[diff];letters=cfg.letters.slice();
+    bossCfg=BOSS_CFG[diff];
     score=0;lives=cfg.lives;combo=0;maxCombo=0;hits=0;level=1;
-    spawnAcc=0;cooldown=0;reloadBar.style.transform='scaleX(1)';
+    spawnAcc=0;cooldown=0;playerT=0;reloadBar.style.transform='scaleX(1)';
+    bossLetterTimer=0;missileFireTimer=0;
     field.classList.remove('shake');flashEl.classList.remove('on');
     clearField();buildStars();buildPad();updateHud();
+    $('#bossHud').classList.toggle('show',mode==='boss');
+    $('#bossMiniHp').style.transform='scaleX(1)';
+    $('.hint').textContent = mode==='boss'
+      ? '按字母拦截 BOSS 的导弹 · 按 BOSS 身上的字母攻击它 · 字母相同优先打导弹！'
+      : '你的飞机自动沿 8 字轨迹移动 · 按字母按钮 / 键盘字母开火 · 瞄准最危险的那架！';
     startScreen.classList.add('hidden');overScreen.classList.add('hidden');
     gameScreen.classList.remove('hidden');
+    if(mode==='boss')createBoss();
     audio();running=true;last=performance.now();raf=requestAnimationFrame(loop);
   }
   function screenHit(){
     field.classList.remove('shake');void field.offsetWidth;field.classList.add('shake');
     flashEl.classList.remove('on');void flashEl.offsetWidth;flashEl.classList.add('on');
   }
-  function gameOver(){
+  function endGame(win){
     running=false;cancelAnimationFrame(raf);
-    const key='plane_hi_'+curDiff;
+    const key='plane_hi_'+mode+'_'+curDiff;
     const hi=Math.max(score,parseInt(localStorage.getItem(key)||'0',10)||0);
     try{localStorage.setItem(key,String(hi));}catch(e){}
     $('#finalScore').textContent=score;$('#finalCombo').textContent=maxCombo;$('#finalHi').textContent=hi;
-    noise(.7,.2);[520,400,300,190].forEach((f,i)=>setTimeout(()=>tone(f,.26,'sine',.07),i*160));
+    $('#finalMedal').textContent=win?'🏆':'🏅';
+    $('#finalTitle').textContent=win?'BOSS DEFEATED!':'MISSION OVER';
+    if(win){noise(.5,.15);[523,659,784,1047].forEach((f,i)=>setTimeout(()=>tone(f,.3,'sine',.08),i*130));}
+    else{noise(.7,.2);[520,400,300,190].forEach((f,i)=>setTimeout(()=>tone(f,.26,'sine',.07),i*160));}
     gameScreen.classList.add('hidden');overScreen.classList.remove('hidden');
   }
+  function gameOver(){endGame(false);}
 
   /* ------- 爆炸特效 ------- */
   function boom(x,y,color,big){
@@ -457,8 +546,8 @@
     el.style.setProperty('--glow',color);
     el.innerHTML='<svg class="plane-svg" viewBox="0 0 90 110">'+SHIPS[ship].replace(/COL/g,color)+'</svg>'+
                  '<div class="letter-badge">'+display+'</div>';
-    // 起点：顶部随机位置；终点：底部中央的玩家飞机
-    const side=startX<w/2?-1:1, tx=w/2, ty=h-150, midX=(startX+tx)/2;
+    // 起点：顶部随机位置；终点：当前玩家飞机位置（循环中持续跟随）
+    const side=startX<(playerX||w/2)?-1:1, tx=playerX||w/2, ty=playerY||h-150, midX=(startX+tx)/2;
     const c={p0x:startX,p0y:-92,p3x:tx,p3y:ty,p1x:0,p1y:0,p2x:0,p2y:0};
     switch(route){
       case 'direct':
@@ -530,6 +619,100 @@
     const i=enemies.indexOf(e);if(i>=0)enemies.splice(i,1);e.el.remove();
   }
 
+  /* ------- BOSS 模式：BOSS 与字母导弹 ------- */
+  function randomLetter(){return letters[Math.floor(Math.random()*letters.length)];}
+  function createBoss(){
+    const el=document.createElement('div');el.className='boss';
+    el.innerHTML='<div class="boss-hp-wrap"><i></i></div>'+
+      '<svg viewBox="0 0 150 176">'+
+      '<path d="M75 60 L150 100 L150 128 L75 108 L0 128 L0 100 Z" fill="#8a2440" stroke="#ff9fb5" stroke-width="2"/>'+
+      '<path d="M75 18 L122 52 L122 66 L75 50 L28 66 L28 52 Z" fill="#a12c4c" stroke="#ff9fb5" stroke-width="2"/>'+
+      '<path d="M75 12 Q98 44 98 92 L96 158 Q75 175 75 176 Q75 175 54 158 L52 92 Q52 44 75 12 Z" fill="#b8304f" stroke="#ffc0cf" stroke-width="2.4"/>'+
+      '<path d="M75 12 Q98 44 98 92 L75 86 L52 92 Q52 44 75 12 Z" fill="#ff7d9c" opacity=".35"/>'+
+      '<rect x="42" y="30" width="12" height="30" rx="5" fill="#2a0a1a" opacity=".7"/>'+
+      '<rect x="96" y="30" width="12" height="30" rx="5" fill="#2a0a1a" opacity=".7"/>'+
+      '<ellipse cx="75" cy="128" rx="14" ry="18" fill="#1a0812" stroke="#ff9fb5" stroke-width="2.5"/>'+
+      '<ellipse class="thrust" cx="56" cy="14" rx="7" ry="14" fill="#ffb03a"/>'+
+      '<ellipse class="thrust" cx="94" cy="14" rx="7" ry="14" fill="#ffb03a"/>'+
+      '</svg><div class="letter-badge">A</div>';
+    field.appendChild(el);
+    boss={el:el,x:0,y:0,t:0,hp:bossCfg.hp,maxHp:bossCfg.hp,letter:'',letterActive:false,badge:el.querySelector('.letter-badge'),
+          hpBar:el.querySelector('.boss-hp-wrap i'),flash:0};
+    updateBossLetter();
+  }
+  function updateBossLetter(){
+    if(!boss)return;
+    boss.letter=randomLetter();
+    boss.letterActive=true;
+    boss.badge.textContent=(cfg.lower&&Math.random()<cfg.lower)?boss.letter.toLowerCase():boss.letter;
+    boss.el.classList.remove('locked');
+    // 字母短暂消失再出现，强化"每隔几秒出现一次"的感觉
+    boss.el.classList.add('letter-off');
+    setTimeout(()=>{if(boss)boss.el.classList.remove('letter-off');},260);
+  }
+  function moveBoss(dt,w,h){
+    if(!boss)return;
+    boss.t+=dt;
+    // 规律 8 字移动：横向大幅摆动，纵向小幅起伏
+    const bx=w/2+Math.sin(boss.t*.55)*Math.min(w*.36,330);
+    const by=h*.20+Math.sin(boss.t*1.1+Math.PI/3)*Math.min(h*.07,40);
+    boss.x=bx-75;boss.y=by-88;
+    if(boss.flash>0){boss.flash-=dt;boss.el.style.opacity=(.4+Math.random()*.6).toFixed(2);}
+    else boss.el.style.opacity='1';
+    boss.el.style.transform='translate('+boss.x+'px,'+boss.y+'px)';
+  }
+  function fireMissile(w,h){
+    if(!boss)return;
+    const letter=randomLetter();
+    const el=document.createElement('div');el.className='missile';
+    const color=COLORS[Math.floor(Math.random()*COLORS.length)];
+    el.innerHTML='<svg viewBox="0 0 40 44"><path d="M20 2 Q27 14 27 28 L20 42 L13 28 Q13 14 20 2 Z" fill="'+color+'" stroke="#fff" stroke-width="1.6"/>'+
+      '<path d="M13 30 L5 40 L14 37 Z M27 30 L35 40 L26 37 Z" fill="'+color+'" stroke="#fff" stroke-width="1"/>'+
+      '<ellipse cx="20" cy="4" rx="3" ry="5" fill="#fff" opacity=".8"/></svg><div class="let">'+
+      ((cfg.lower&&Math.random()<cfg.lower)?letter.toLowerCase():letter)+'</div>';
+    field.appendChild(el);
+    const sx=boss.x+75,sy=boss.y+150;
+    // 朝玩家当前位置飞行（发射瞬间的方向）
+    const dx=playerX-sx,dy=playerY-sy,d=Math.hypot(dx,dy)||1;
+    missiles.push({letter:letter,x:sx-20,y:sy-22,vx:dx/d*bossCfg.missileSpeed,vy:dy/d*bossCfg.missileSpeed,
+                   el:el,color:color});
+  }
+  function moveMissiles(dt,w,h){
+    for(let i=missiles.length-1;i>=0;i--){
+      const m=missiles[i];
+      m.x+=m.vx*dt;m.y+=m.vy*dt;
+      m.el.style.transform='translate('+m.x+'px,'+m.y+'px) rotate('+(Math.atan2(m.vy,m.vx)*180/Math.PI+90).toFixed(1)+'deg)';
+      // 导弹碰到玩家 -> 扣血
+      if(Math.hypot(m.x+20-playerX,m.y+22-playerY)<44){
+        screenHit();boom(m.x+20,m.y+22,m.color,true);sBoom();
+        floatText(Math.max(60,Math.min(w-60,m.x+20)),m.y,'机体受损!','#ff5d7a');
+        combo=0;lives--;updateHud();
+        m.el.remove();missiles.splice(i,1);
+        if(lives<=0){gameOver();return;}
+      }else if(m.y>h+60||m.x<-80||m.x>w+80){m.el.remove();missiles.splice(i,1);}
+    }
+  }
+  function removeMissile(m){const i=missiles.indexOf(m);if(i>=0)missiles.splice(i,1);m.el.remove();}
+  function hitBoss(){
+    if(!boss)return;
+    boss.hp--;
+    boss.flash=.3;
+    boss.hpBar.style.transform='scaleX('+Math.max(0,boss.hp/boss.maxHp).toFixed(3)+')';
+    $('#bossMiniHp').style.transform='scaleX('+Math.max(0,boss.hp/boss.maxHp).toFixed(3)+')';
+    combo++;if(combo>maxCombo)maxCombo=combo;
+    const pts=15+(combo-1)*3;score+=pts;hits++;level=1+Math.floor(hits/10);
+    boom(boss.x+75,boss.y+88,'#ff5d7a',false);sHit();say(boss.letter);
+    floatText(boss.x+75,boss.y+70,'+'+pts,'#ffd166');
+    updateBossLetter();updateHud();
+    if(boss.hp<=0){
+      boom(boss.x+75,boss.y+88,'#ffc247',true);
+      setTimeout(()=>boom(boss.x+40,boss.y+70,'#ff4d6d',true),160);
+      setTimeout(()=>boom(boss.x+110,boss.y+70,'#4dd2ff',true),300);
+      boss.el.remove();boss=null;
+      endGame(true);
+    }
+  }
+
   /* ------- 战斗逻辑 ------- */
   function loseLife(e){
     screenHit();boom(e.x+35,e.y+44,e.color,true);sBoom();
@@ -545,25 +728,40 @@
     floatText(x,y-8,'+'+pts+(combo>2?'  连击x'+combo:''),'#ffd166');
     removeEnemy(e);updateHud();
   }
-  function shoot(letter){
-    if(!running||cooldown>0)return;
-    const match=enemies.filter(e=>e.letter===letter&&!e.el.classList.contains('locked'));
-    if(!match.length){
-      sMiss();
-      const btn=pad.querySelector('[data-letter="'+letter+'"]');
-      if(btn){btn.classList.remove('shake');void btn.offsetWidth;btn.classList.add('shake');}
-      return;
-    }
-    match.sort((a,b)=>b.y-a.y);
-    const target=match[0];target.el.classList.add('locked');
-    const px=field.clientWidth/2,py=field.clientHeight-62;
+  function fireBullet(target){
+    target.el.classList.add('locked');
+    // 子弹从玩家当前位置（机头）发射
+    const px=playerX,py=playerY-34;
     const el=document.createElement('div');el.className='bullet';field.appendChild(el);
-    bullets.push({x:px-4.5,y:py,target:target,el:el});
+    bullets.push({x:px-4.5,y:py,target:target,kind:target.__kind||'enemy',el:el});
     cooldown=.24;sShoot();
     playerEl.classList.remove('firing');void playerEl.offsetWidth;playerEl.classList.add('firing');
     setTimeout(()=>playerEl.classList.remove('firing'),90);
-    const btn=pad.querySelector('[data-letter="'+letter+'"]');
+    const btn=pad.querySelector('[data-letter="'+target.letter.toUpperCase()+'"]');
     if(btn){btn.classList.remove('flash');void btn.offsetWidth;btn.classList.add('flash');}
+  }
+  function shoot(letter){
+    if(!running||cooldown>0)return;
+    // 优先级 1：字母导弹（BOSS 模式）—— 最靠近玩家的先打
+    const ms=missiles.filter(m=>m.letter===letter&&!m.el.classList.contains('locked'));
+    if(ms.length){
+      ms.sort((a,b)=>b.y-a.y);
+      const t=ms[0];t.__kind='missile';fireBullet(t);return;
+    }
+    // 优先级 2：BOSS 身上的字母
+    if(mode==='boss'&&boss&&boss.letterActive&&boss.letter===letter&&!boss.el.classList.contains('locked')){
+      boss.__kind='boss';fireBullet(boss);return;
+    }
+    // 优先级 3：经典敌机
+    const match=enemies.filter(e=>e.letter===letter&&!e.el.classList.contains('locked'));
+    if(match.length){
+      match.sort((a,b)=>b.y-a.y);
+      const t=match[0];t.__kind='enemy';fireBullet(t);return;
+    }
+    // 按错 / 无目标
+    sMiss();
+    const btn=pad.querySelector('[data-letter="'+letter+'"]');
+    if(btn){btn.classList.remove('shake');void btn.offsetWidth;btn.classList.add('shake');}
   }
 
   /* ------- 主循环 ------- */
@@ -574,21 +772,55 @@
     const speedMult=Math.min(1.8,1+(level-1)*.08);
     const spawnGap=cfg.spawn*Math.max(.62,1-(level-1)*.055);
 
-    spawnAcc+=dt*1000;
-    if(spawnAcc>=spawnGap){
-      spawnAcc=0;
-      if(enemies.length<cfg.maxEnemies)spawnWave(speedMult,w,h);
+    updatePlayer(dt,w,h);
+
+    if(mode==='classic'){
+      // 敌机终点实时跟随玩家飞机，无论玩家怎么移动都朝它扑来
+      for(let i=0;i<enemies.length;i++){enemies[i].c.p3x=playerX;enemies[i].c.p3y=playerY-8;}
+      spawnAcc+=dt*1000;
+      if(spawnAcc>=spawnGap){
+        spawnAcc=0;
+        if(enemies.length<cfg.maxEnemies)spawnWave(speedMult,w,h);
+      }
+      for(let i=enemies.length-1;i>=0;i--){
+        const e=enemies[i];
+        moveEnemy(e,dt);
+        if(e.p>=1){loseLife(e);if(!running)return;}
+      }
+    }else{
+      // BOSS 模式：BOSS 移动、定时亮字母、发射字母导弹
+      if(boss){
+        moveBoss(dt,w,h);
+        bossLetterTimer+=dt;
+        if(bossLetterTimer>=bossCfg.letterEvery){bossLetterTimer=0;updateBossLetter();}
+        missileFireTimer+=dt;
+        if(missileFireTimer>=bossCfg.fireEvery){missileFireTimer=0;if(missiles.length<7)fireMissile(w,h);}
+      }
+      moveMissiles(dt,w,h);
+      if(!running)return;
     }
-    for(let i=enemies.length-1;i>=0;i--){
-      const e=enemies[i];
-      moveEnemy(e,dt);
-      if(e.p>=1){loseLife(e);if(!running)return;}
-    }
+
     for(let i=bullets.length-1;i>=0;i--){
       const b=bullets[i],tg=b.target;
-      if(enemies.indexOf(tg)<0){b.el.remove();bullets.splice(i,1);continue;}
-      const tx=tg.x+35,ty=tg.y+44,dx=tx-b.x,dy=ty-b.y,dist=Math.hypot(dx,dy),step=1350*dt;
-      if(dist<=step+9){hitEnemy(tg);b.el.remove();bullets.splice(i,1);}
+      // 目标是否还有效
+      let alive=false,tx=0,ty=0;
+      if(b.kind==='enemy'){alive=enemies.indexOf(tg)>=0;tx=tg.x+35;ty=tg.y+44;}
+      else if(b.kind==='missile'){alive=missiles.indexOf(tg)>=0;tx=tg.x+20;ty=tg.y+22;}
+      else if(b.kind==='boss'){alive=!!boss;tx=(boss?boss.x+75:0);ty=(boss?boss.y+88:0);}
+      if(!alive){b.el.remove();bullets.splice(i,1);continue;}
+      const dx=tx-b.x,dy=ty-b.y,dist=Math.hypot(dx,dy),step=1350*dt;
+      if(dist<=step+11){
+        if(b.kind==='enemy')hitEnemy(tg);
+        else if(b.kind==='missile'){
+          combo++;if(combo>maxCombo)maxCombo=combo;
+          const pts=8+(combo-1)*2;score+=pts;hits++;
+          boom(tx,ty,tg.color,false);sHit();say(tg.letter);
+          floatText(tx,ty-6,'+'+pts,'#ffd166');removeMissile(tg);updateHud();
+        }
+        else if(b.kind==='boss')hitBoss();
+        b.el.remove();bullets.splice(i,1);
+        if(!running)return;
+      }
       else{
         b.x+=dx/dist*step;b.y+=dy/dist*step;
         const ang=Math.atan2(dy,dx)*180/Math.PI+90;
@@ -604,6 +836,13 @@
 
   /* ------- 事件 ------- */
   startScreen.addEventListener('click',e=>{
+    const m=e.target.closest('.mode');
+    if(m){
+      mode=m.dataset.mode;
+      startScreen.querySelectorAll('.mode').forEach(x=>x.classList.toggle('active',x===m));
+      $('#bossHud').classList.toggle('show',mode==='boss');
+      return;
+    }
     const b=e.target.closest('.diff');if(b)startGame(b.dataset.diff);
   });
   pad.addEventListener('click',e=>{
@@ -617,6 +856,16 @@
   soundBtn.addEventListener('click',()=>{
     soundOn=!soundOn;try{localStorage.setItem('plane_sound',soundOn?'1':'0');}catch(e){}
     updateSoundBtn();if(soundOn)audio();
+  });
+  $('#fullBtn').addEventListener('click',()=>{
+    try{
+      if(!document.fullscreenElement){
+        const el=document.documentElement;
+        (el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen).call(el);
+      }else{
+        (document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen).call(document);
+      }
+    }catch(e){}
   });
   $('#restartBtn').addEventListener('click',()=>startGame(curDiff));
   $('#againBtn').addEventListener('click',()=>startGame(curDiff));
